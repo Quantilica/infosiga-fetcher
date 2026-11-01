@@ -1,0 +1,12 @@
+_commit: v0.1.0
+_src_path: /home/dk/code/Quantilica/fetcher-template
+author_email: daniel@dkko.me
+author_name: Komesu, D.K.
+description: Coletor e conversor Lake Hive de sinistros de trânsito de SP (INFOSIGA)
+domain: transito
+has_lake: true
+package_name: infosiga-fetcher
+package_slug: infosiga_fetcher
+protocol: http
+source_id: infosiga
+source_name: Sistema de Informações Gerenciais de Sinistros de Trânsito de SP (INFOSIGA-SP)
