@@ -47,7 +47,7 @@ def convert(
     try:
         from infosiga_fetcher import lake
     except ImportError as exc:
-        raise RuntimeError(
+        raise ImportError(
             "Conversão para o lake requer o extra 'analysis'. "
             "Instale com: quantilica install infosiga --extra analysis"
         ) from exc
