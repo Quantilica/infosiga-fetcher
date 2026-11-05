@@ -7,9 +7,6 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Não lançado]
 
-### Corrigido
-- Sem o extra `analysis`, o comando `convert` termina com código 1 e a instrução de instalação (`quantilica install infosiga --extra analysis`), sem traceback.
-
 ## [0.2.0] - 2026-11-04
 
 ### Corrigido
@@ -24,6 +21,7 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Lake: leitura membro a membro em streaming, decodificação cp1252 estrita (sem
   `errors="replace"`), colunas lidas como texto (sem inferência com 5000 linhas) e
   `skipped` contado à parte.
+- Sem o extra `analysis`, o comando `convert` termina com código 1 e a instrução de instalação (`quantilica install infosiga --extra analysis`), sem traceback.
 
 ## [0.1.0] - 2026-11-01
 
