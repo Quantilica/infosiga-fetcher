@@ -1,0 +1,197 @@
+{
+  "fonte": "infosiga",
+  "dataset": "pessoas",
+  "gerado_em": "2026-11-09T14:05:50+00:00",
+  "particoes": [
+    "ano"
+  ],
+  "colunas": [
+    {
+      "nome": "id_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "id_pessoa",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "id_veiculo",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "cod_ibge",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "municipio",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "regiao_administrativa",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tipo_via",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tipo_veiculo_vitima",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tipo_de_vitima",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "modo_transporte_vitima",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "sexo",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "idade",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "gravidade_lesao",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "faixa_etaria_demografica",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "faixa_etaria_legal",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "profissao",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "grau_de_instrucao",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "nacionalidade",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "data_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "ano_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "mes_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "dia_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "ano_mes_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "data_obito",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "ano_obito",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "mes_obito",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "dia_obito",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "ano_mes_obito",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "local_obito",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "local_via",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tempo_sinistro_obito",
+      "tipos": [
+        "large_string"
+      ]
+    }
+  ],
+  "arquivos": 13
+}

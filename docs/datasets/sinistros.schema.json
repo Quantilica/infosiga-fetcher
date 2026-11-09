@@ -1,0 +1,311 @@
+{
+  "fonte": "infosiga",
+  "dataset": "sinistros",
+  "gerado_em": "2026-11-09T14:05:50+00:00",
+  "particoes": [
+    "ano"
+  ],
+  "colunas": [
+    {
+      "nome": "id_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tipo_registro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "data_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "ano_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "mes_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "dia_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "hora_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "ano_mes_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "dia_da_semana",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "turno",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "logradouro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "numero_logradouro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tipo_via",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tipo_local",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "latitude",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "longitude",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "cod_ibge",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "municipio",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "regiao_administrativa",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "administracao",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "conservacao",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "circunscricao",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tp_sinistro_primario",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "qtd_pedestre",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "qtd_bicicleta",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "qtd_motocicleta",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "qtd_automovel",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "qtd_onibus",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "qtd_caminhao",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "qtd_veic_outros",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "qtd_veic_nao_disponivel",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "qtd_gravidade_fatal",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "qtd_gravidade_grave",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "qtd_gravidade_leve",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "qtd_gravidade_ileso",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "qtd_gravidade_nao_disponivel",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tp_sinistro_atrop_pedestre",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tp_sinistro_atrop_vitima_fora_veic",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tp_sinistro_colisao_frontal",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tp_sinistro_colisao_traseira",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tp_sinistro_colisao_lateral",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tp_sinistro_colisao_transversal",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tp_sinistro_colisao_outros",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tp_sinistro_choque",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tp_sinistro_atrop_animal",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tp_sinistro_capotamento",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tp_sinistro_engavetamento",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tp_sinistro_tombamento",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tp_sinistro_outros",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tp_sinistro_nao_disponivel",
+      "tipos": [
+        "large_string"
+      ]
+    }
+  ],
+  "arquivos": 13
+}

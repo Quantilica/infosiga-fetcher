@@ -1,0 +1,83 @@
+{
+  "fonte": "infosiga",
+  "dataset": "veiculos",
+  "gerado_em": "2026-11-09T14:05:50+00:00",
+  "particoes": [
+    "ano"
+  ],
+  "colunas": [
+    {
+      "nome": "id_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "id_veiculo",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "marca_modelo",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "ano_fab",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "ano_modelo",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "cor_veiculo",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "tipo_veiculo",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "data_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "ano_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "mes_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "dia_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    },
+    {
+      "nome": "ano_mes_sinistro",
+      "tipos": [
+        "large_string"
+      ]
+    }
+  ],
+  "arquivos": 13
+}
