@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from quantilica.cli.sdk import FetcherApp, make_resolve_groups
+from quantilica.core.registry import FetcherInfo
 from quantilica.core.sync import FreshnessPolicy
 
 from .catalog import GROUP_ALIASES, GROUPS, list_datasets
@@ -27,6 +28,13 @@ def path_builder(
 fetcher = FetcherApp(
     name="infosiga",
     help="Coletor e conversor Lake Hive de sinistros de trânsito de SP (INFOSIGA)",
+    info=FetcherInfo(
+        id="infosiga",
+        nome="Infosiga.SP - Sinistros de Trânsito",
+        orgao="Departamento Estadual de Trânsito de São Paulo (Detran-SP)",
+        homepage="https://infosiga.detran.sp.gov.br/",
+        dominio="transporte",
+    ),
     groups_dict=GROUPS,
     aliases_dict=GROUP_ALIASES,
     list_datasets=list_datasets,
