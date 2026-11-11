@@ -32,6 +32,10 @@ fetcher = FetcherApp(
         id="infosiga",
         nome="Infosiga.SP - Sinistros de Trânsito",
         orgao="Departamento Estadual de Trânsito de São Paulo (Detran-SP)",
+        licenca=(
+            "Sem licença declarada; dados públicos pela Lei 12.527/2011 (LAI) "
+            "e Decreto 8.777/2016"
+        ),
         homepage="https://infosiga.detran.sp.gov.br/",
         dominio="transporte",
     ),
