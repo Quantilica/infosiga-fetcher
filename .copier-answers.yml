@@ -1,10 +1,16 @@
-_commit: v0.1.0
+_commit: v0.2.1
 _src_path: /home/dk/code/Quantilica/fetcher-template
 author_email: daniel@dkko.me
 author_name: Komesu, D.K.
+cadencia: monthly
 description: Coletor e conversor Lake Hive de sinistros de trânsito de SP (INFOSIGA)
 domain: transito
+dominio: transporte
 has_lake: true
+homepage: https://infosiga.detran.sp.gov.br/
+licenca: Sem licença declarada; dados públicos pela Lei 12.527/2011 (LAI) e Decreto
+    8.777/2016
+orgao: Departamento Estadual de Trânsito de São Paulo (Detran-SP)
 package_name: infosiga-fetcher
 package_slug: infosiga_fetcher
 protocol: http
