@@ -50,6 +50,11 @@ _PERIODO = re.compile(r"(?<!\d)((?:19|20)\d{2})-((?:19|20)\d{2})(?!\d)")
 # nunca vem de ``ano_fab`` (ano de fabricacao do veiculo).
 _ANO_COLUMNS = ("data_sinistro", "ano_sinistro")
 _ANO_MIN, _ANO_MAX = 1900, 2100
+# Grupo do catalogo sem dados para o lake (dicionario de dados em PDF): o build de
+# um dataset nao abre o ZIP dele so para descobrir que nao tem CSV.
+_GRUPOS_SEM_DADOS = frozenset({"dicionario"})
+_TMP_DIRNAME = ".tmp"
+_ORIGIN_FILE = "quantilica.origin_file"
 
 
 def _c1_passthrough(exc: UnicodeDecodeError) -> tuple[str, int]:
@@ -108,6 +113,28 @@ def _member_as_utf8(path: Path, name: str | None) -> Iterator[Path]:
             with zipfile.ZipFile(path) as zf, zf.open(name) as fh:
                 _transcode_to_utf8(fh, dest)
         yield dest
+
+
+def _contar_origens(dataset_dir: Path) -> dict[str, int]:
+    """``{nome do bruto: Parquets do dataset que o citam}``, so pelos rodapes.
+
+    Uma listagem de diretorios e a leitura dos rodapes do lake (nunca do bruto);
+    cada Parquet escrito de um membro e ano e uma escrita que o build sem mudanca
+    conta como ``skipped``.
+    """
+    contagem: dict[str, int] = {}
+    if not dataset_dir.is_dir():
+        return contagem
+    for parquet in dataset_dir.rglob("*.parquet"):
+        if _TMP_DIRNAME in parquet.relative_to(dataset_dir).parts:
+            continue
+        try:
+            nome = pl.read_parquet_metadata(parquet).get(_ORIGIN_FILE)
+        except (OSError, pl.exceptions.PolarsError):
+            continue
+        if nome:
+            contagem[nome] = contagem.get(nome, 0) + 1
+    return contagem
 
 
 def _periodo(member_name: str) -> tuple[int, int] | None:
@@ -172,10 +199,47 @@ class InfosigaLakeConverter:
             )
 
         # Find current raw files
-        all_raw_files = [f for f in input_path.rglob("*") if f.is_file()]
+        all_raw_files = [
+            f
+            for f in input_path.rglob("*")
+            if f.is_file() and not f.name.endswith(".manifest.json")
+        ]
         active_files = select_current(all_raw_files)
 
+        # Parquets do lake por bruto de origem, por dataset, lidos sob demanda e
+        # uma vez so (so rodapes). Com ``force`` nao ha o que consultar.
+        origens: dict[str, dict[str, int]] = {}
+
         for raw_file in active_files:
+            # Pasta do catalogo sem dados de lake (dicionario em PDF).
+            partes = raw_file.relative_to(input_path).parts
+            if len(partes) > 1 and partes[0] in _GRUPOS_SEM_DADOS:
+                continue
+            candidatos = writers
+            if raw_file.suffix.lower() == ".csv":
+                # CSV solto: o dataset sai do nome, sem abrir. CSV de outra tabela
+                # (ou de nenhuma) nao e desta tarefa.
+                alvo = _match_table_type(raw_file.name)
+                if not alvo or alvo not in writers:
+                    continue
+                candidatos = {alvo: writers[alvo]}
+            # Em dia no lake: o bruto igual ao registrado nos rodapes e pulado antes
+            # de abrir o ZIP ou ler o CSV (o bruto pode estar numa montagem lenta).
+            # A contagem de ``skipped`` e a de Parquets escritos a partir dele, a
+            # mesma que o laco abaixo produziria escrita por escrita.
+            pendentes: dict[str, LakeWriter] = {}
+            for ds, w in candidatos.items():
+                if not force:
+                    if ds not in origens:
+                        origens[ds] = _contar_origens(w.dataset_dir)
+                    n = origens[ds].get(raw_file.name, 0)
+                    if n and w.origin_recorded(raw_file):
+                        res.skipped += n
+                        continue
+                pendentes[ds] = w
+            if not pendentes:
+                continue
+
             try:
                 names = _csv_member_names(raw_file)
             except (OSError, zipfile.BadZipFile) as exc:
@@ -191,9 +255,9 @@ class InfosigaLakeConverter:
             for name in members:
                 label = name or raw_file.name
                 table_type = _match_table_type(label)
-                if not table_type or table_type not in writers:
+                if not table_type or table_type not in pendentes:
                     continue
-                writer = writers[table_type]
+                writer = pendentes[table_type]
                 # Cada membro e um arquivo de origem proprio no lake (chave composta
                 # zip+membro): com a chave so do ZIP o LakeWriter tomaria os membros
                 # seguintes (mesmo sha256) por ja convertidos.
