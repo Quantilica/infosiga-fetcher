@@ -15,7 +15,7 @@ from pathlib import Path
 
 try:
     import polars as pl
-    from quantilica.analytics.lake import ConvertResult, LakeWriter
+    from quantilica.analytics.lake import ConvertResult, LakeWriter, output_id
     from quantilica.core.lake import (
         DatasetDescriptor,
         composite_file_key,
@@ -53,8 +53,6 @@ _ANO_MIN, _ANO_MAX = 1900, 2100
 # Grupo do catalogo sem dados para o lake (dicionario de dados em PDF): o build de
 # um dataset nao abre o ZIP dele so para descobrir que nao tem CSV.
 _GRUPOS_SEM_DADOS = frozenset({"dicionario"})
-_TMP_DIRNAME = ".tmp"
-_ORIGIN_FILE = "quantilica.origin_file"
 
 
 def _c1_passthrough(exc: UnicodeDecodeError) -> tuple[str, int]:
@@ -113,28 +111,6 @@ def _member_as_utf8(path: Path, name: str | None) -> Iterator[Path]:
             with zipfile.ZipFile(path) as zf, zf.open(name) as fh:
                 _transcode_to_utf8(fh, dest)
         yield dest
-
-
-def _contar_origens(dataset_dir: Path) -> dict[str, int]:
-    """``{nome do bruto: Parquets do dataset que o citam}``, so pelos rodapes.
-
-    Uma listagem de diretorios e a leitura dos rodapes do lake (nunca do bruto);
-    cada Parquet escrito de um membro e ano e uma escrita que o build sem mudanca
-    conta como ``skipped``.
-    """
-    contagem: dict[str, int] = {}
-    if not dataset_dir.is_dir():
-        return contagem
-    for parquet in dataset_dir.rglob("*.parquet"):
-        if _TMP_DIRNAME in parquet.relative_to(dataset_dir).parts:
-            continue
-        try:
-            nome = pl.read_parquet_metadata(parquet).get(_ORIGIN_FILE)
-        except (OSError, pl.exceptions.PolarsError):
-            continue
-        if nome:
-            contagem[nome] = contagem.get(nome, 0) + 1
-    return contagem
 
 
 def _periodo(member_name: str) -> tuple[int, int] | None:
@@ -206,10 +182,6 @@ class InfosigaLakeConverter:
         ]
         active_files = select_current(all_raw_files)
 
-        # Parquets do lake por bruto de origem, por dataset, lidos sob demanda e
-        # uma vez so (so rodapes). Com ``force`` nao ha o que consultar.
-        origens: dict[str, dict[str, int]] = {}
-
         for raw_file in active_files:
             # Pasta do catalogo sem dados de lake (dicionario em PDF).
             partes = raw_file.relative_to(input_path).parts
@@ -223,19 +195,15 @@ class InfosigaLakeConverter:
                 if not alvo or alvo not in writers:
                     continue
                 candidatos = {alvo: writers[alvo]}
-            # Em dia no lake: o bruto igual ao registrado nos rodapes e pulado antes
+            # Completo no lake: o bruto igual ao registrado nos rodapes, com TODAS
+            # as saidas que declarou (um Parquet por membro e ano), e pulado antes
             # de abrir o ZIP ou ler o CSV (o bruto pode estar numa montagem lenta).
-            # A contagem de ``skipped`` e a de Parquets escritos a partir dele, a
-            # mesma que o laco abaixo produziria escrita por escrita.
+            # Um build interrompido deixa saidas faltando e o bruto e reaberto.
             pendentes: dict[str, LakeWriter] = {}
             for ds, w in candidatos.items():
-                if not force:
-                    if ds not in origens:
-                        origens[ds] = _contar_origens(w.dataset_dir)
-                    n = origens[ds].get(raw_file.name, 0)
-                    if n and w.origin_recorded(raw_file):
-                        res.skipped += n
-                        continue
+                if not force and w.origin_complete(raw_file):
+                    res.skipped += len(w.origin_outputs(raw_file) or ())
+                    continue
                 pendentes[ds] = w
             if not pendentes:
                 continue
@@ -252,75 +220,96 @@ class InfosigaLakeConverter:
             else:
                 members = list(names)
 
+            # Membros por dataset, na ordem do ZIP.
+            por_dataset: dict[str, list[str | None]] = {}
             for name in members:
-                label = name or raw_file.name
-                table_type = _match_table_type(label)
-                if not table_type or table_type not in pendentes:
-                    continue
-                writer = pendentes[table_type]
-                # Cada membro e um arquivo de origem proprio no lake (chave composta
-                # zip+membro): com a chave so do ZIP o LakeWriter tomaria os membros
-                # seguintes (mesmo sha256) por ja convertidos.
-                key = composite_file_key(raw_file, name).lower()
-                try:
-                    with _member_as_utf8(raw_file, name) as csv_path:
-                        self._convert_member(
-                            writer, raw_file, key, csv_path, label, table_type, res
-                        )
-                except Exception as exc:
-                    res.errors.append(
-                        f"Erro ao converter INFOSIGA {label} em {raw_file.name}: {exc}"
-                    )
+                table_type = _match_table_type(name or raw_file.name)
+                if table_type and table_type in pendentes:
+                    por_dataset.setdefault(table_type, []).append(name)
+
+            for table_type, membros in por_dataset.items():
+                self._convert_dataset(
+                    pendentes[table_type], raw_file, membros, table_type, res
+                )
 
         return res
 
-    def _convert_member(
+    def _convert_dataset(
         self,
         writer: LakeWriter,
         raw_file: Path,
-        key: str,
-        csv_path: Path,
-        label: str,
+        membros: list[str | None],
         table_type: str,
         res: ConvertResult,
     ) -> None:
+        """Converte os membros de um bruto que caem num dataset.
+
+        Cada Parquet escrito declara TODAS as saidas do bruto no dataset (a uniao
+        dos anos de todos os membros), para o proximo build so pular o bruto quando
+        nenhuma faltar. Com mais de um membro as saidas so se conhecem lendo todos
+        antes da primeira escrita (uma passada a mais); com um so, a mesma passada
+        planeja e grava. Membro que nao da para planejar (erro determinista) deixa
+        o bruto sem declaracao: segue sendo reaberto, e o erro aparece a cada build.
+        """
+        saidas: list[str] | None = None
+        planejados = membros
+        if len(membros) > 1:
+            uniao: set[str] = set()
+            planejados = []
+            falhou = False
+            for name in membros:
+                label = name or raw_file.name
+                key = composite_file_key(raw_file, name).lower()
+                try:
+                    with _member_as_utf8(raw_file, name) as csv_path:
+                        plano = _planejar(csv_path, label, table_type)
+                except Exception as exc:
+                    falhou = True
+                    res.errors.append(
+                        f"Erro ao converter INFOSIGA {label} em {raw_file.name}: {exc}"
+                    )
+                    continue
+                planejados.append(name)
+                if plano is not None:
+                    uniao.update(output_id({"ano": y}, key) for y in plano[1])
+            saidas = None if falhou or not uniao else sorted(uniao)
+
+        for name in planejados:
+            label = name or raw_file.name
+            # Cada membro e um arquivo de origem proprio no lake (chave composta
+            # zip+membro): com a chave so do ZIP o LakeWriter tomaria os membros
+            # seguintes (mesmo sha256) por ja convertidos.
+            key = composite_file_key(raw_file, name).lower()
+            try:
+                with _member_as_utf8(raw_file, name) as csv_path:
+                    plano = _planejar(csv_path, label, table_type)
+                    if plano is None:
+                        continue
+                    lf, anos = plano
+                    declaradas = saidas
+                    if len(membros) == 1:
+                        declaradas = [output_id({"ano": y}, key) for y in anos]
+                    self._escrever_anos(
+                        writer, raw_file, key, lf, anos, label, declaradas, res
+                    )
+            except Exception as exc:
+                res.errors.append(
+                    f"Erro ao converter INFOSIGA {label} em {raw_file.name}: {exc}"
+                )
+
+    @staticmethod
+    def _escrever_anos(
+        writer: LakeWriter,
+        raw_file: Path,
+        key: str,
+        lf: pl.LazyFrame,
+        anos: list[int | None],
+        label: str,
+        declaradas: list[str] | None,
+        res: ConvertResult,
+    ) -> None:
         """Escreve um membro, uma particao ``ano`` por vez (streaming, lazy)."""
-        # Tudo como texto (convencao do lake): o esquema nao depende de quantas
-        # linhas a inferencia viu e ids/codigos nao perdem zeros a esquerda.
-        lf = pl.scan_csv(csv_path, separator=";", infer_schema=False, encoding="utf8")
-        columns = lf.collect_schema().names()
-        lf = lf.rename({c: _norm_col(c) for c in columns})
-        names = [_norm_col(c) for c in columns]
-        if lf.head(1).collect().height == 0:
-            return
-
-        periodo = _periodo(label)
-        source = next((c for c in _ANO_COLUMNS if c in names), None)
-        if source is not None:
-            # Ano do sinistro, por linha. Linha sem ano valido NAO ganha ano
-            # inventado: vai para a particao de quarentena (ano nulo).
-            ano = (
-                pl.col(source)
-                .str.extract(r"(?:^|\D)(\d{4})(?:\D|$)", 1)
-                .cast(pl.Int32, strict=False)
-            )
-            ano = pl.when(ano.is_between(_ANO_MIN, _ANO_MAX)).then(ano)
-        elif table_type != "sinistros" and periodo is not None:
-            # pessoas/veiculos sem data do sinistro: particao = ano inicial da faixa
-            # do arquivo (periodo), registrada em ``periodo_arquivo``.
-            ano = pl.lit(periodo[0], dtype=pl.Int32)
-            lf = lf.with_columns(
-                pl.lit(f"{periodo[0]}-{periodo[1]}").alias("periodo_arquivo")
-            )
-        else:
-            raise ValueError(
-                "sem coluna de ano do sinistro "
-                f"({'/'.join(_ANO_COLUMNS)}) nem faixa de anos no nome do arquivo"
-            )
-        lf = lf.with_columns(ano.cast(pl.Int32).alias("ano"))
-
-        anos = lf.select("ano").unique().collect()["ano"].to_list()
-        for year in sorted(anos, key=lambda y: (y is None, y)):
+        for year in anos:
             part = lf.filter(
                 pl.col("ano").is_null() if year is None else pl.col("ano") == year
             )
@@ -337,11 +326,58 @@ class InfosigaLakeConverter:
                 src=raw_file,
                 partitions={"ano": year},
                 file_key_name=key,
+                origin_outputs=declaradas,
             )
             if written.status == "skipped":
                 res.skipped += 1
             else:
                 res.converted += 1
+
+
+def _planejar(
+    csv_path: Path, label: str, table_type: str
+) -> tuple[pl.LazyFrame, list[int | None]] | None:
+    """Quadro lazy do membro com a coluna ``ano`` e os anos que ele grava.
+
+    ``None`` para membro sem linhas (nao grava nada). Os anos saem da coluna da
+    data do sinistro por linha, ou da faixa do nome do arquivo.
+    """
+    # Tudo como texto (convencao do lake): o esquema nao depende de quantas
+    # linhas a inferencia viu e ids/codigos nao perdem zeros a esquerda.
+    lf = pl.scan_csv(csv_path, separator=";", infer_schema=False, encoding="utf8")
+    columns = lf.collect_schema().names()
+    lf = lf.rename({c: _norm_col(c) for c in columns})
+    names = [_norm_col(c) for c in columns]
+    if lf.head(1).collect().height == 0:
+        return None
+
+    periodo = _periodo(label)
+    source = next((c for c in _ANO_COLUMNS if c in names), None)
+    if source is not None:
+        # Ano do sinistro, por linha. Linha sem ano valido NAO ganha ano
+        # inventado: vai para a particao de quarentena (ano nulo).
+        ano = (
+            pl.col(source)
+            .str.extract(r"(?:^|\D)(\d{4})(?:\D|$)", 1)
+            .cast(pl.Int32, strict=False)
+        )
+        ano = pl.when(ano.is_between(_ANO_MIN, _ANO_MAX)).then(ano)
+    elif table_type != "sinistros" and periodo is not None:
+        # pessoas/veiculos sem data do sinistro: particao = ano inicial da faixa
+        # do arquivo (periodo), registrada em ``periodo_arquivo``.
+        ano = pl.lit(periodo[0], dtype=pl.Int32)
+        lf = lf.with_columns(
+            pl.lit(f"{periodo[0]}-{periodo[1]}").alias("periodo_arquivo")
+        )
+    else:
+        raise ValueError(
+            "sem coluna de ano do sinistro "
+            f"({'/'.join(_ANO_COLUMNS)}) nem faixa de anos no nome do arquivo"
+        )
+    lf = lf.with_columns(ano.cast(pl.Int32).alias("ano"))
+
+    anos = lf.select("ano").unique().collect()["ano"].to_list()
+    return lf, sorted(anos, key=lambda y: (y is None, y))
 
 
 converter = InfosigaLakeConverter()
