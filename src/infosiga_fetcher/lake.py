@@ -18,6 +18,7 @@ try:
     from quantilica.analytics.lake import ConvertResult, LakeWriter, output_id
     from quantilica.core.lake import (
         DatasetDescriptor,
+        Planned,
         composite_file_key,
         partition_types_for,
         select_current,
@@ -140,6 +141,38 @@ class InfosigaLakeConverter:
     def datasets(self) -> list[str]:
         """Return available dataset identifiers."""
         return list(DATASETS)
+
+    def inventory(self, input_dir: Path) -> list[Planned]:
+        """O que o conversor faz com cada bruto, para a cobertura da auditoria.
+
+        O grupo ``dicionario`` (dicionario de dados em PDF) e qualquer arquivo que nao
+        seja ZIP ou CSV sao ``nao_tabular``: o conversor nao os le e nao ha Parquet a
+        cobrar. Versao antiga de um bruto que tem outra mais nova e ``superado``. Os
+        demais (ZIP, e CSV solto de uma das tabelas) devem gerar Parquet.
+        """
+        input_path = Path(input_dir)
+        if not input_path.is_dir():
+            return []
+        arquivos = [
+            f
+            for f in sorted(input_path.rglob("*"))
+            if f.is_file() and not f.name.endswith((".manifest.json", ".tmp"))
+        ]
+        vigentes = set(select_current(arquivos))
+        planned: list[Planned] = []
+        for f in arquivos:
+            partes = f.relative_to(input_path).parts
+            if len(partes) > 1 and partes[0] in _GRUPOS_SEM_DADOS:
+                planned.append(Planned(f, skip_reason="nao_tabular"))
+            elif f.suffix.lower() not in (".zip", ".csv"):
+                planned.append(Planned(f, skip_reason="nao_tabular"))
+            elif f not in vigentes:
+                planned.append(Planned(f, skip_reason="superado"))
+            elif f.suffix.lower() == ".csv":
+                planned.append(Planned(f, dataset=_match_table_type(f.name)))
+            else:  # ZIP: um Parquet por membro e ano, em ate tres datasets
+                planned.append(Planned(f))
+        return planned
 
     def convert(
         self,

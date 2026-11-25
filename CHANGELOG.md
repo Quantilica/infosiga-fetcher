@@ -5,6 +5,12 @@ Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [Não lançado]
+
+### Corrigido
+
+- `lake`: o conversor passa a ter `inventory()`, e a auditoria do lake deixa de acusar `sem_parquet` no `dicionario/dicionario_dados@AAAAMMDD.zip` vigente. O grupo `dicionario` (dicionário de dados em PDF) nunca vai ao lake no conversor, mas sem inventário a auditoria o contava como arquivo de fonte com conversor e cobrava um Parquet que não existe. Agora o inventário o declara `nao_tabular`, junto com qualquer arquivo que não seja ZIP ou CSV; a versão antiga de um bruto que tem outra mais nova é `superado`; o ZIP de dados e o CSV solto de uma das três tabelas seguem esperando Parquet, e o CSV de tabela desconhecida também (a auditoria o acusa). O `convert` não muda.
+
 ## [0.3.1] - 2026-11-19
 
 ### Adicionado
