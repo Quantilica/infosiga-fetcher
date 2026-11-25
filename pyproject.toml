@@ -1,6 +1,6 @@
 [project]
 name = "infosiga-fetcher"
-version = "0.3.1"
+version = "0.3.2"
 description = "Coletor e conversor Lake Hive de sinistros de trânsito de SP (INFOSIGA)"
 readme = "README.md"
 authors = [
