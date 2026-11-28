@@ -208,3 +208,47 @@ def test_leitura_nao_carrega_o_membro_inteiro(tmp_path: Path, monkeypatch) -> No
     res = converter.convert(tmp_path / "raw", lake_dir, datasets=["sinistros"])
     assert not res.errors
     assert res.converted == 1
+
+
+def test_entrada_ausente_e_erro(tmp_path: Path) -> None:
+    res = converter.convert(tmp_path / "nao-existe", tmp_path / "lake")
+    assert res.converted == 0
+    assert len(res.errors) == 1
+    assert "não existe" in res.errors[0]
+
+
+def test_zip_sem_membro_reconhecido_e_erro_com_a_lista_de_membros(
+    tmp_path: Path,
+) -> None:
+    raw_dir = tmp_path / "raw" / "dados"
+    raw_dir.mkdir(parents=True)
+    _zip(
+        raw_dir,
+        {
+            "acidentes_2022.csv": "id;data_sinistro\n1;15/05/2022\n",
+            "ocupantes_2022.csv": "id;data_sinistro\n1;15/05/2022\n",
+        },
+    )
+    lake_dir = tmp_path / "lake"
+    lake_dir.mkdir()
+
+    for datasets in (None, ["veiculos"]):
+        res = converter.convert(tmp_path / "raw", lake_dir, datasets=datasets)
+        assert res.converted == 0
+        assert len(res.errors) == 1
+        assert "acidentes_2022.csv" in res.errors[0]
+        assert "ocupantes_2022.csv" in res.errors[0]
+    assert not list(lake_dir.rglob("*.parquet"))
+
+
+def test_zip_com_membro_reconhecido_de_outro_dataset_nao_e_erro(
+    tmp_path: Path,
+) -> None:
+    raw_dir = tmp_path / "raw" / "dados"
+    raw_dir.mkdir(parents=True)
+    _zip(raw_dir, {"pessoas_2022.csv": "id;data_sinistro\n1;15/05/2022\n"})
+    lake_dir = tmp_path / "lake"
+    lake_dir.mkdir()
+
+    res = converter.convert(tmp_path / "raw", lake_dir, datasets=["veiculos"])
+    assert not res.errors

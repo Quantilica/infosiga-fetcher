@@ -14,14 +14,6 @@ def test_client_init() -> None:
     assert client.client is not None
 
 
-def test_get_min_max_dates() -> None:
-    client = InfosigaClient()
-    fake_data = {"minDate": "2015-01-01", "maxDate": "2026-09-30"}
-    with patch.object(client.client, "get_json", return_value=fake_data):
-        res = client.get_min_max_dates()
-        assert res["maxDate"] == "2026-09-30"
-
-
 def test_download_dados(tmp_path) -> None:
     client = InfosigaClient()
     target = tmp_path / "dados.zip"

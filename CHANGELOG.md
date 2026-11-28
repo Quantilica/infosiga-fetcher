@@ -5,6 +5,17 @@ Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [Não lançado]
+
+### Corrigido
+
+- `lake`: diretório de entrada ausente passa a ser erro do `ConvertResult` (antes devolvia resultado vazio sem erro e o `convert` saía 0).
+- `lake`: ZIP sem nenhum membro reconhecido (o conversor só aceita CSVs com "sinistro", "pessoa" ou "veiculo" no nome) passa a ser erro do arquivo, com a lista dos membros CSV na mensagem. Antes, se o Detran renomeasse os CSVs, nada era convertido e nada era reportado. Membro reconhecido de um dataset não pedido (`--dataset`) continua não sendo erro.
+
+### Removido
+
+- `InfosigaClient.get_min_max_dates`: devolvia `{}` tanto para erro quanto para resposta vazia e nenhum código a chamava (a consulta ao endpoint `minMaxDates` segue documentada em `docs/`, só como referência manual). A constante `INFOSIGA_MIN_MAX_DATES_URL` permanece.
+
 ## [0.3.2] - 2026-11-24
 
 ### Corrigido

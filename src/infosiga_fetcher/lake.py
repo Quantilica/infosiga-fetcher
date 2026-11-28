@@ -186,7 +186,8 @@ class InfosigaLakeConverter:
         input_path = Path(input_dir)
         lake_path = Path(lake_dir)
 
-        if not input_path.exists():
+        if not input_path.is_dir():
+            res.errors.append(f"diretório '{input_path}' não existe")
             return res
 
         target_datasets = set(datasets or DATASETS)
@@ -252,6 +253,16 @@ class InfosigaLakeConverter:
                 members: list[str | None] = [None]
             else:
                 members = list(names)
+                # Nenhum membro reconhecido (o Detran pode renomear os CSVs): sem
+                # este erro nada seria convertido e nada seria reportado. Vale para
+                # o ZIP inteiro, qualquer que seja o filtro de datasets.
+                if not any(_match_table_type(n) for n in members):
+                    res.errors.append(
+                        f"INFOSIGA {raw_file.name}: nenhum membro do ZIP "
+                        "reconhecido (o nome precisa conter sinistro, pessoa ou "
+                        f"veiculo); membros CSV: {', '.join(members) or '(nenhum)'}"
+                    )
+                    continue
 
             # Membros por dataset, na ordem do ZIP.
             por_dataset: dict[str, list[str | None]] = {}
