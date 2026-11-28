@@ -252,3 +252,33 @@ def test_zip_com_membro_reconhecido_de_outro_dataset_nao_e_erro(
 
     res = converter.convert(tmp_path / "raw", lake_dir, datasets=["veiculos"])
     assert not res.errors
+
+
+def test_sem_filtro_dataset_sem_membro_no_zip_e_erro_mas_converte_os_demais(
+    tmp_path: Path,
+) -> None:
+    raw_dir = tmp_path / "raw" / "dados"
+    raw_dir.mkdir(parents=True)
+    _zip(
+        raw_dir,
+        {
+            "sinistros_2022.csv": "id_sinistro;data_sinistro\n1;15/05/2022\n",
+            "pessoas_2022.csv": "id_sinistro;data_sinistro\n1;15/05/2022\n",
+            "frota_2022.csv": "id_sinistro;data_sinistro\n1;15/05/2022\n",
+        },
+    )
+    lake_dir = tmp_path / "lake"
+    lake_dir.mkdir()
+
+    res = converter.convert(tmp_path / "raw", lake_dir)
+    assert res.converted == 2
+    assert len(res.errors) == 1
+    assert "veiculos" in res.errors[0]
+    assert "frota_2022.csv" in res.errors[0]
+
+    # O erro reaparece a cada build (o bruto nunca fica "completo").
+    assert len(converter.convert(tmp_path / "raw", lake_dir).errors) == 1
+
+    # Com filtro explícito, quem pediu só o que existe não recebe erro.
+    res = converter.convert(tmp_path / "raw", lake_dir, datasets=["sinistros"])
+    assert not res.errors

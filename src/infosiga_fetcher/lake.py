@@ -263,6 +263,21 @@ class InfosigaLakeConverter:
                         f"veiculo); membros CSV: {', '.join(members) or '(nenhum)'}"
                     )
                     continue
+                # Sem filtro de datasets, cada tabela precisa ter ao menos um membro
+                # no ZIP: se o Detran renomear só uma (ex.: veiculos_* virar
+                # frota_*), o dataset ficaria vazio com ``errors=0``. Os membros
+                # reconhecidos seguem sendo convertidos.
+                if datasets is None:
+                    faltam = [
+                        ds
+                        for ds in DATASETS
+                        if not any(_match_table_type(n) == ds for n in members)
+                    ]
+                    if faltam:
+                        res.errors.append(
+                            f"INFOSIGA {raw_file.name}: nenhum membro do ZIP para "
+                            f"{', '.join(faltam)}; membros CSV: {', '.join(members)}"
+                        )
 
             # Membros por dataset, na ordem do ZIP.
             por_dataset: dict[str, list[str | None]] = {}

@@ -11,6 +11,7 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 - `lake`: diretório de entrada ausente passa a ser erro do `ConvertResult` (antes devolvia resultado vazio sem erro e o `convert` saía 0).
 - `lake`: ZIP sem nenhum membro reconhecido (o conversor só aceita CSVs com "sinistro", "pessoa" ou "veiculo" no nome) passa a ser erro do arquivo, com a lista dos membros CSV na mensagem. Antes, se o Detran renomeasse os CSVs, nada era convertido e nada era reportado. Membro reconhecido de um dataset não pedido (`--dataset`) continua não sendo erro.
+- `lake`: sem `--dataset` (todos os datasets), cada tabela precisa ter ao menos um membro no ZIP; a que não tiver (ex.: `veiculos_*` renomeado para `frota_*`) vira erro do arquivo, com a lista de membros, e as outras seguem sendo convertidas. Antes bastava um membro reconhecido de qualquer tabela para o ZIP passar e a tabela renomeada ficava vazia com `errors=0`. Com `--dataset`, quem pede só o que existe não recebe erro.
 
 ### Removido
 
